@@ -129,7 +129,7 @@ const PipelinesOverviewPageK8s: React.FC = () => {
           interval={interval}
           bordered
         />
-      </div>
+      </div>        
     </>
   );
 };
