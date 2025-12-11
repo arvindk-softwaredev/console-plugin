@@ -26,6 +26,9 @@ import { taskRunStatus } from '../utils/pipeline-utils';
 import { pipelineRunStatus } from '../utils/pipeline-filter-reducer';
 import { ColoredStatusIcon } from '../pipeline-topology/StatusIcons';
 import { resourcePathFromModel } from '../utils/utils';
+import { useOverlay } from '@openshift-console/dynamic-plugin-sdk';
+import { LaunchOverlay } from '@openshift-console/dynamic-plugin-sdk/lib/app/modal-support/OverlayProvider';
+
 import './PipelineRunLogs.scss';
 
 interface PipelineRunLogsProps {
@@ -35,6 +38,7 @@ interface PipelineRunLogsProps {
   t: TFunction;
   taskRuns: TaskRunKind[];
   isDevConsoleProxyAvailable?: boolean;
+  launchOverlay?: LaunchOverlay;
 }
 interface PipelineRunLogsState {
   activeItem: string;
@@ -154,6 +158,7 @@ class PipelineRunLogsWithTranslation extends React.Component<
             tRuns,
             obj.metadata?.namespace,
             obj.metadata?.name,
+            this.props.launchOverlay,
             isDevConsoleProxyAvailable,
           )
         : undefined;
@@ -287,11 +292,13 @@ const TranslatedPipelineRunLogs = withTranslation()(
 
 const PipelineRunLogs = (props) => {
   const isDevConsoleProxyAvailable = useFlag(FLAGS.DEVCONSOLE_PROXY);
+  const launchOverlay = useOverlay();
 
   return (
     <TranslatedPipelineRunLogs
       {...props}
       isDevConsoleProxyAvailable={isDevConsoleProxyAvailable}
+      launchOverlay={launchOverlay}
     />
   );
 };
