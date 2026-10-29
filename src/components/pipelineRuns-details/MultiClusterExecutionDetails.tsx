@@ -11,16 +11,16 @@ import {
   GridItem,
   Spinner,
 } from '@patternfly/react-core';
-import { ClusterQueueKind, PipelineRunKind } from '../../types';
+import { PipelineRunKind } from '../../types';
 import { FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useWorkloads } from '../hooks/useMultiKueueResources';
 import {
-  getGroupVersionKindForModel,
-  useActiveNamespace,
-  useK8sWatchResource,
-} from '@openshift-console/dynamic-plugin-sdk';
-import { ClusterQueueModel } from '../../models';
+  isClusterConnected,
+  useGetClusterQueue,
+  useGetMultiKueueCluster,
+  useWorkloads,
+} from '../hooks/useMultiKueueResources';
+import { useActiveNamespace } from '@openshift-console/dynamic-plugin-sdk';
 import { calculateDuration } from '../utils/pipeline-utils';
 
 type MultiClusterExecutionDetailsProps = {
@@ -41,10 +41,10 @@ const MultiClusterExecutionDetails: FC<MultiClusterExecutionDetailsProps> = ({
   const workload = workloads?.[0];
 
   const [clusterQueue, clusterQueueLoaded, clusterQueueLoadError] =
-    useK8sWatchResource<ClusterQueueKind>({
-      groupVersionKind: getGroupVersionKindForModel(ClusterQueueModel),
-      name: workload?.status?.admission?.clusterQueue,
-    });
+    useGetClusterQueue(workload?.status?.admission?.clusterQueue);
+
+  const [targetCluster, targetClusterLoaded, targetClusterLoadError] =
+    useGetMultiKueueCluster(workload?.status?.clusterName);
 
   const createdTime = workload?.metadata?.creationTimestamp;
   const admittedTime = workload?.status?.conditions?.find(
@@ -60,6 +60,50 @@ const MultiClusterExecutionDetails: FC<MultiClusterExecutionDetailsProps> = ({
       <CardTitle>{t('Cluster Execution')}</CardTitle>
       <CardBody>
         <Grid hasGutter>
+          <GridItem sm={6}>
+            <Grid hasGutter>
+              <DescriptionList isHorizontal aria-label="Horizontal">
+                <DescriptionListTerm>
+                  {t('Target Cluster Information')}
+                </DescriptionListTerm>
+                {workloadsError || targetClusterLoadError ? (
+                  <Alert
+                    variant="danger"
+                    isInline
+                    title={t('Unable to load Target Cluster Information')}
+                    className="pf-v6-u-mb-md pf-v6-u-mt-lg"
+                  />
+                ) : (
+                  <>
+                    <DescriptionListGroup>
+                      <DescriptionListTerm>{t('Cluster')}</DescriptionListTerm>
+                      <DescriptionListDescription>
+                        {workloadsLoaded && workload ? (
+                          workload?.status?.clusterName
+                        ) : (
+                          <Spinner size="md" isInline />
+                        )}
+                      </DescriptionListDescription>
+                    </DescriptionListGroup>
+                    <DescriptionListGroup>
+                      <DescriptionListTerm>{t('Status')}</DescriptionListTerm>
+                      <DescriptionListDescription>
+                        {targetClusterLoaded && targetCluster ? (
+                          isClusterConnected(targetCluster) ? (
+                            t('Connected')
+                          ) : (
+                            t('Disconnected')
+                          )
+                        ) : (
+                          <Spinner size="md" isInline />
+                        )}
+                      </DescriptionListDescription>
+                    </DescriptionListGroup>
+                  </>
+                )}
+              </DescriptionList>
+            </Grid>
+          </GridItem>
           <GridItem sm={6}>
             <Grid hasGutter>
               <DescriptionList isHorizontal aria-label="Horizontal">
